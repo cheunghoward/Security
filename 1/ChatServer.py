@@ -1,13 +1,31 @@
+import json
 import socket
 import argparse
 import sys
 
-s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+MAX_PACKET_SIZE = 65507
+
+clients = {}
 
 parser = argparse.ArgumentParser()
+parser.add_argument("-sp", type=int)
+args = parser.parse_args(sys.argv[1:])
 
-parser.add_argument("-sp")
+s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+s.bind((socket.gethostbyname(socket.gethostname()), args.sp))
 
-hey = parser.parse_args("-sp 1".split())
+print socket.gethostbyname(socket.gethostname())
 
-print hey.sp
+while True:
+    (data, address) = s.recvfrom(MAX_PACKET_SIZE)
+    # For future reference: the protocol must be followed exactly
+    decoded = json.loads(data)
+
+    if decoded["type"] is "LIST":
+        print "Received LIST"
+    elif decoded["type"] is "SIGN-ON":
+        clients[decoded["message"]] = address
+        print "Received SIGN-ON"
+    else:
+        print "Cannot decode"
+
